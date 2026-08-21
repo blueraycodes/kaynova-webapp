@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= typeof title !== 'undefined' ? title : 'Admin - Kaynova' %></title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="admin-wrapper">
+  <aside class="admin-sidebar">
+    <div class="brand">Kaynova <span style="opacity:0.6; font-weight:400; font-size:13px;">Admin</span></div>
+    <a href="/admin/dashboard" class="<%= currentPath === '/admin/dashboard' ? 'active' : '' %>">📊 Dashboard</a>
+    <a href="/admin/products" class="<%= currentPath.startsWith('/admin/products') ? 'active' : '' %>">📦 Products</a>
+    <a href="/admin/orders" class="<%= currentPath.startsWith('/admin/orders') ? 'active' : '' %>">🚚 Orders & Tracking</a>
+    <a href="/" target="_blank">🌐 View Storefront</a>
+    <form method="POST" action="/admin/logout" style="margin-top:20px;">
+      <button type="submit" style="background:none; border:none; color:#d7dcf5; font-weight:600; font-size:14px; padding:11px 22px; cursor:pointer; width:100%; text-align:left;">🚪 Logout</button>
+    </form>
+  </aside>
+  <main class="admin-main">

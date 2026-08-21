@@ -1,0 +1,82 @@
+<% var title = 'Order ' + order.order_number + ' - Admin' %>
+<%- include('partials/header') %>
+
+<div class="admin-topbar">
+  <h1>Order <%= order.order_number %></h1>
+  <a href="/admin/orders" class="btn btn-outline">Back to Orders</a>
+</div>
+
+<div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:24px;">
+  <div class="card">
+    <h3>Customer & Shipping</h3>
+    <p><strong><%= order.customer_name %></strong><br/>
+    <%= order.phone %> &middot; <%= order.email %><br/>
+    <%= order.address_line %>, <%= order.city %>, <%= order.state %> - <%= order.pincode %></p>
+
+    <h3 style="margin-top:20px;">Items</h3>
+    <% items.forEach(function(it) { %>
+      <div class="cart-summary"><span><%= it.product_name %> × <%= it.quantity %></span><span>₹<%= (it.price * it.quantity).toFixed(2) %></span></div>
+    <% }); %>
+    <div class="cart-summary"><span>Subtotal</span><span>₹<%= order.subtotal.toFixed(2) %></span></div>
+    <div class="cart-summary"><span>Shipping</span><span>₹<%= order.shipping_fee.toFixed(2) %></span></div>
+    <div class="cart-summary total"><span>Total</span><span>₹<%= order.total_amount.toFixed(2) %></span></div>
+
+    <h3 style="margin-top:20px;">Payment</h3>
+    <p>Status: <span class="badge badge-<%= order.payment_status %>"><%= order.payment_status %></span></p>
+    <p style="font-size:12.5px; color:#6b7280;">
+      Razorpay Order ID: <%= order.razorpay_order_id || '-' %><br/>
+      Razorpay Payment ID: <%= order.razorpay_payment_id || '-' %>
+    </p>
+
+    <h3 style="margin-top:20px;">Shipment Timeline</h3>
+    <% if (timeline.length === 0) { %>
+      <p style="color:#6b7280;">No shipment updates yet.</p>
+    <% } else { %>
+      <div class="timeline">
+        <% timeline.slice().reverse().forEach(function(t) { %>
+          <div class="timeline-item">
+            <div class="t-status"><%= t.status %></div>
+            <div class="t-meta">
+              <%= new Date(t.created_at).toLocaleString() %>
+              <% if (t.location) { %> &middot; <%= t.location %> <% } %>
+            </div>
+            <% if (t.note) { %><div style="font-size:13.5px; margin-top:3px;"><%= t.note %></div><% } %>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h3>Update Consignment / Shipment Status</h3>
+    <form method="POST" action="/admin/orders/<%= order.id %>/status">
+      <div class="form-group">
+        <label>Order Status</label>
+        <select name="order_status" required>
+          <% ['placed','confirmed','packed','shipped','out_for_delivery','delivered','cancelled','returned'].forEach(function(s) { %>
+            <option value="<%= s %>" <%= order.order_status === s ? 'selected' : '' %>><%= s.replace(/_/g,' ') %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Courier Name</label>
+        <input type="text" name="courier_name" value="<%= order.courier_name || '' %>" placeholder="e.g. BlueDart, Delhivery, DTDC" />
+      </div>
+      <div class="form-group">
+        <label>Tracking Number</label>
+        <input type="text" name="tracking_number" value="<%= order.tracking_number || '' %>" placeholder="e.g. BD1234567890" />
+      </div>
+      <div class="form-group">
+        <label>Current Location (for this update)</label>
+        <input type="text" name="location" placeholder="e.g. Mumbai Hub" />
+      </div>
+      <div class="form-group">
+        <label>Note (optional)</label>
+        <textarea name="note" rows="2" placeholder="e.g. Package handed over to courier partner"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Update Status & Add Timeline Entry</button>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

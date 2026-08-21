@@ -1,0 +1,23 @@
+<% var title = 'Order Confirmed - Kaynova' %>
+<%- include('partials/header') %>
+
+<div class="card" style="max-width:640px; margin: 40px auto; text-align:center;">
+  <h1 style="color:#1c9a5b;">✅ Order Confirmed!</h1>
+  <p>Thank you, <strong><%= order.customer_name %></strong>. Your payment was successful.</p>
+  <p style="font-size:15px;">Order Number: <strong><%= order.order_number %></strong></p>
+  <p style="font-size:15px;">Total Paid: <strong>₹<%= order.total_amount.toFixed(2) %></strong></p>
+
+  <div style="text-align:left; margin-top:24px;">
+    <h3>Items</h3>
+    <% items.forEach(function(it) { %>
+      <div class="cart-summary"><span><%= it.product_name %> × <%= it.quantity %></span><span>₹<%= (it.price * it.quantity).toFixed(2) %></span></div>
+    <% }); %>
+  </div>
+
+  <div style="margin-top:30px; display:flex; gap:12px; justify-content:center;">
+    <a href="/track" class="btn btn-primary">Track this order</a>
+    <a href="/" class="btn btn-outline">Continue Shopping</a>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,64 @@
+<% var title = 'Products - Admin' %>
+<%- include('partials/header') %>
+
+<div class="admin-topbar">
+  <h1>Products</h1>
+  <a href="/admin/products/new" class="btn btn-accent">+ Add Product</a>
+</div>
+
+<div class="card" style="margin-bottom:24px;">
+  <div class="admin-topbar" style="margin-bottom:12px;">
+    <h2 style="margin:0; font-size:20px;">Categories</h2>
+  </div>
+
+  <form method="POST" action="/admin/categories/new" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+    <input type="text" name="name" placeholder="New category name" required style="flex:1; min-width:220px;" />
+    <button type="submit" class="btn btn-primary">Add Category</button>
+  </form>
+
+  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:16px;">
+    <% categories.forEach(function(category) { %>
+      <div style="display:flex; align-items:center; gap:8px; background:#f3f4f6; border:1px solid #dfe3ea; border-radius:999px; padding:8px 12px;">
+        <form method="POST" action="/admin/categories/<%= category.id %>/edit" style="display:flex; align-items:center; gap:8px; margin:0;">
+          <input type="text" name="name" value="<%= category.name %>" required style="border:1px solid #cbd5e1; border-radius:8px; padding:6px 10px; min-width:140px;" />
+          <button type="submit" class="btn btn-outline btn-sm">Save</button>
+        </form>
+        <form method="POST" action="/admin/categories/<%= category.id %>/delete" onsubmit="return confirm('Delete category \"<%= category.name %>\"? Products in this category will be moved to no category.');" style="margin:0;">
+          <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+        </form>
+      </div>
+    <% }); %>
+    <% if (categories.length === 0) { %>
+      <p style="color:#6b7280; margin:0;">No categories yet.</p>
+    <% } %>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Active</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    <% products.forEach(function(p) { %>
+      <tr>
+        <td><img class="thumb" src="<%= p.image_url || 'https://via.placeholder.com/44' %>" /></td>
+        <td><%= p.name %></td>
+        <td><%= p.category_name || '-' %></td>
+        <td>₹<%= p.price.toFixed(2) %></td>
+        <td><%= p.stock %></td>
+        <td><%= p.active ? '✅' : '❌' %></td>
+        <td style="display:flex; gap:8px;">
+          <a href="/admin/products/<%= p.id %>/edit" class="btn btn-outline btn-sm">Edit</a>
+          <form method="POST" action="/admin/products/<%= p.id %>/delete" onsubmit="return confirm('Delete this product?');">
+            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+          </form>
+        </td>
+      </tr>
+    <% }); %>
+    <% if (products.length === 0) { %>
+      <tr><td colspan="7" style="text-align:center; color:#6b7280;">No products yet.</td></tr>
+    <% } %>
+  </tbody>
+</table>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,26 @@
+<% var title = 'Kaynova - Online Store' %>
+<%- include('partials/header') %>
+
+<h2 class="section-title">All Products</h2>
+
+<% if (products.length === 0) { %>
+  <div class="empty-state">No products found.</div>
+<% } else { %>
+<div class="product-grid">
+  <% products.forEach(function(p) { %>
+    <div class="product-card">
+      <a href="/product/<%= p.id %>">
+        <img src="<%= p.image_url || 'https://via.placeholder.com/400x300?text=No+Image' %>" alt="<%= p.name %>" />
+      </a>
+      <div class="pc-body">
+        <h3><a href="/product/<%= p.id %>"><%= p.name %></a></h3>
+        <div class="stock-tag"><%= p.category_name || 'Uncategorized' %> &middot; <%= p.stock > 0 ? p.stock + ' in stock' : 'Out of stock' %></div>
+        <div class="price">₹<%= p.price.toFixed(2) %></div>
+        <a href="/product/<%= p.id %>" class="btn btn-primary btn-block">View Product</a>
+      </div>
+    </div>
+  <% }); %>
+</div>
+<% } %>
+
+<%- include('partials/footer') %>

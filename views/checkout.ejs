@@ -1,0 +1,194 @@
+<% var title = 'Checkout - Kaynova' %>
+<%- include('partials/header') %>
+
+<h2 class="section-title">Checkout</h2>
+
+<div style="display:grid; grid-template-columns: 1.4fr 1fr; gap:30px;">
+  <div class="card">
+    <h3>Shipping Details</h3>
+    <form id="checkoutForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="name" value="<%= customer && customer.name ? customer.name : '' %>" required />
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" name="phone" pattern="[0-9]{10}" value="<%= customer ? customer.phone : '' %>" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" value="<%= customer && customer.email ? customer.email : '' %>" required />
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        <textarea name="address" rows="2" required></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" name="city" required />
+        </div>
+        <div class="form-group">
+          <label>State</label>
+          <input type="text" name="state" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Pincode</label>
+        <input type="text" name="pincode" pattern="[0-9]{6}" required />
+      </div>
+      <div id="formError" class="alert alert-error" style="display:none;"></div>
+      <button type="submit" class="btn btn-accent btn-block" id="payBtn">Pay with Razorpay</button>
+    </form>
+  </div>
+
+  <div class="card" id="orderSummary">
+    <h3>Order Summary</h3>
+    <p>Loading...</p>
+  </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  const RAZORPAY_KEY_ID = "<%= razorpayKeyId %>";
+
+  function getCart() {
+    return JSON.parse(localStorage.getItem('shopease_cart') || '[]');
+  }
+
+  let currentSummary = null;
+
+  async function loadSummary() {
+    const cart = getCart();
+    if (cart.length === 0) {
+      document.getElementById('orderSummary').innerHTML = '<p>Your cart is empty. <a href="/">Go shopping</a></p>';
+      document.getElementById('payBtn').disabled = true;
+      return;
+    }
+    const res = await fetch('/api/cart/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: cart }),
+    });
+    const data = await res.json();
+    currentSummary = data;
+
+    let html = '';
+    data.items.forEach(item => {
+      html += `<div class="cart-summary"><span>${item.name} × ${item.quantity}</span><span>₹${item.lineTotal.toFixed(2)}</span></div>`;
+    });
+    html += `<div class="cart-summary"><span>Shipping</span><span>${data.shipping === 0 ? 'FREE' : '₹' + data.shipping.toFixed(2)}</span></div>`;
+    html += `<div class="cart-summary total"><span>Total</span><span>₹${data.total.toFixed(2)}</span></div>`;
+    document.getElementById('orderSummary').innerHTML = '<h3>Order Summary</h3>' + html;
+  }
+
+  loadSummary();
+
+  document.getElementById('checkoutForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const errorBox = document.getElementById('formError');
+    errorBox.style.display = 'none';
+    const payBtn = document.getElementById('payBtn');
+
+    if (!RAZORPAY_KEY_ID || RAZORPAY_KEY_ID.includes('XXXXXXXX')) {
+      errorBox.style.display = 'block';
+      errorBox.innerText = 'Razorpay is not configured yet. Add your test keys to the .env file to enable checkout.';
+      return;
+    }
+
+    const cart = getCart();
+    if (cart.length === 0) return;
+
+    const formData = new FormData(e.target);
+    const customer = {
+      name: formData.get('name'),
+      phone: formData.get('phone'),
+      email: formData.get('email'),
+      address: formData.get('address'),
+      city: formData.get('city'),
+      state: formData.get('state'),
+      pincode: formData.get('pincode'),
+    };
+
+    payBtn.disabled = true;
+    payBtn.innerText = 'Processing...';
+
+    try {
+      const orderRes = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer, items: cart }),
+      });
+      const orderData = await orderRes.json();
+
+      if (orderData.error) {
+        throw new Error(orderData.error);
+      }
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Kaynova',
+        description: 'Order ' + orderData.orderNumber,
+        order_id: orderData.razorpayOrderId,
+        prefill: {
+          name: customer.name,
+          email: customer.email,
+          contact: customer.phone,
+        },
+        theme: { color: '#2a4494' },
+        handler: async function (response) {
+          const verifyRes = await fetch('/api/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
+          const verifyData = await verifyRes.json();
+          if (verifyData.success) {
+            localStorage.removeItem('shopease_cart');
+            window.location.href = '/order-success/' + verifyData.orderNumber;
+          } else {
+            errorBox.style.display = 'block';
+            errorBox.innerText = verifyData.error || 'Payment verification failed.';
+            payBtn.disabled = false;
+            payBtn.innerText = 'Pay with Razorpay';
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            fetch('/api/order-failed', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ razorpay_order_id: orderData.razorpayOrderId }),
+            });
+            payBtn.disabled = false;
+            payBtn.innerText = 'Pay with Razorpay';
+          },
+        },
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        errorBox.style.display = 'block';
+        errorBox.innerText = 'Payment failed: ' + response.error.description;
+        payBtn.disabled = false;
+        payBtn.innerText = 'Pay with Razorpay';
+      });
+      rzp.open();
+    } catch (err) {
+      errorBox.style.display = 'block';
+      errorBox.innerText = err.message || 'Something went wrong. Please try again.';
+      payBtn.disabled = false;
+      payBtn.innerText = 'Pay with Razorpay';
+    }
+  });
+</script>
+
+<%- include('partials/footer') %>

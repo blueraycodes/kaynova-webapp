@@ -1,0 +1,40 @@
+<% var title = 'Dashboard - Admin' %>
+<%- include('partials/header') %>
+
+<div class="admin-topbar">
+  <h1>Dashboard</h1>
+  <span>Welcome, <strong><%= adminUsername %></strong></span>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num"><%= totalProducts %></div><div class="label">Total Products</div></div>
+  <div class="stat-card"><div class="num"><%= totalOrders %></div><div class="label">Total Orders</div></div>
+  <div class="stat-card"><div class="num"><%= paidOrders %></div><div class="label">Paid Orders</div></div>
+  <div class="stat-card"><div class="num">₹<%= revenue.toFixed(2) %></div><div class="label">Total Revenue</div></div>
+  <div class="stat-card"><div class="num"><%= pendingShipments %></div><div class="label">Pending Shipments</div></div>
+</div>
+
+<h3 style="margin-bottom:14px;">Recent Orders</h3>
+<table>
+  <thead>
+    <tr><th>Order #</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th></th></tr>
+  </thead>
+  <tbody>
+    <% recentOrders.forEach(function(o) { %>
+      <tr>
+        <td><%= o.order_number %></td>
+        <td><%= o.customer_name %></td>
+        <td>₹<%= o.total_amount.toFixed(2) %></td>
+        <td><span class="badge badge-<%= o.payment_status %>"><%= o.payment_status %></span></td>
+        <td><span class="badge badge-<%= o.order_status %>"><%= o.order_status.replace(/_/g,' ') %></span></td>
+        <td><%= new Date(o.created_at).toLocaleDateString() %></td>
+        <td><a href="/admin/orders/<%= o.id %>" class="btn btn-outline btn-sm">View</a></td>
+      </tr>
+    <% }); %>
+    <% if (recentOrders.length === 0) { %>
+      <tr><td colspan="7" style="text-align:center; color:#6b7280;">No orders yet.</td></tr>
+    <% } %>
+  </tbody>
+</table>
+
+<%- include('partials/footer') %>

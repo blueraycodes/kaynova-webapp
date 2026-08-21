@@ -1,0 +1,33 @@
+<% var title = 'My Orders - Kaynova' %>
+<%- include('partials/header') %>
+
+<h2 class="section-title">My Orders</h2>
+
+<div style="display:flex; gap:16px; margin-bottom:20px;">
+  <a href="/account" class="btn btn-outline btn-sm">Profile</a>
+  <a href="/account/orders" class="btn btn-primary btn-sm">My Orders</a>
+</div>
+
+<% if (orders.length === 0) { %>
+  <div class="empty-state">You haven't placed any orders yet. <br/><br/><a href="/" class="btn btn-primary">Start Shopping</a></div>
+<% } else { %>
+  <table>
+    <thead>
+      <tr><th>Order #</th><th>Date</th><th>Total</th><th>Payment</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% orders.forEach(function(o) { %>
+        <tr>
+          <td><%= o.order_number %></td>
+          <td><%= new Date(o.created_at).toLocaleDateString() %></td>
+          <td>₹<%= o.total_amount.toFixed(2) %></td>
+          <td><span class="badge badge-<%= o.payment_status %>"><%= o.payment_status %></span></td>
+          <td><span class="badge badge-<%= o.order_status %>"><%= o.order_status.replace(/_/g,' ') %></span></td>
+          <td><a href="/account/orders/<%= o.order_number %>" class="btn btn-outline btn-sm">View</a></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% } %>
+
+<%- include('partials/footer') %>

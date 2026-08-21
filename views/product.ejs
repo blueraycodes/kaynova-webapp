@@ -1,0 +1,63 @@
+<% var title = product.name + ' - Kaynova' %>
+<%- include('partials/header') %>
+
+<div class="product-detail">
+  <img src="<%= product.image_url || 'https://via.placeholder.com/600x450?text=No+Image' %>" alt="<%= product.name %>" />
+  <div>
+    <h1><%= product.name %></h1>
+    <div class="price">₹<%= product.price.toFixed(2) %></div>
+    <p><%= product.description %></p>
+    <p class="stock-tag"><%= product.stock > 0 ? product.stock + ' units in stock' : 'Currently out of stock' %></p>
+
+    <div class="qty-selector">
+      <button type="button" onclick="changeQty(-1)">−</button>
+      <span id="qtyVal">1</span>
+      <button type="button" onclick="changeQty(1)">+</button>
+    </div>
+
+    <button class="btn btn-accent btn-block" id="addToCartBtn" <%= product.stock === 0 ? 'disabled' : '' %>>
+      Add to Cart
+    </button>
+    <div style="height:10px"></div>
+    <button class="btn btn-primary btn-block" id="buyNowBtn" <%= product.stock === 0 ? 'disabled' : '' %>>
+      Buy Now
+    </button>
+  </div>
+</div>
+
+<script>
+  let qty = 1;
+  const maxStock = <%= product.stock %>;
+  function changeQty(delta) {
+    qty = Math.max(1, Math.min(qty + delta, maxStock || 1));
+    document.getElementById('qtyVal').innerText = qty;
+  }
+
+  function getCart() {
+    return JSON.parse(localStorage.getItem('shopease_cart') || '[]');
+  }
+  function saveCart(cart) {
+    localStorage.setItem('shopease_cart', JSON.stringify(cart));
+  }
+  function addToCart() {
+    const cart = getCart();
+    const existing = cart.find(i => i.productId === <%= product.id %>);
+    if (existing) {
+      existing.quantity += qty;
+    } else {
+      cart.push({ productId: <%= product.id %>, quantity: qty });
+    }
+    saveCart(cart);
+  }
+
+  document.getElementById('addToCartBtn').addEventListener('click', function () {
+    addToCart();
+    alert('Added to cart!');
+  });
+  document.getElementById('buyNowBtn').addEventListener('click', function () {
+    addToCart();
+    window.location.href = '/cart';
+  });
+</script>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,23 @@
+{
+  "name": "ecommerce-app",
+  "version": "1.0.0",
+  "description": "Full e-commerce website with admin panel, Razorpay payments, and consignment tracking",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node db/seed.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "body-parser": "^1.20.2",
+    "connect-sqlite3": "^0.9.13",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "bcryptjs": "^2.4.3",
+    "multer": "^1.4.5-lts.1",
+    "razorpay": "^2.9.4",
+    "uuid": "^9.0.1"
+  }
+}

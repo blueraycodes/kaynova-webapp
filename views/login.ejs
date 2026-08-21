@@ -1,0 +1,142 @@
+<% var title = 'Login - Kaynova' %>
+<%- include('partials/header') %>
+
+<div class="card" style="max-width:420px; margin: 40px auto;">
+  <h2 style="margin-top:0;">Login with OTP</h2>
+  <p style="color:#6b7280; font-size:13.5px; margin-top:-8px;">We'll send a 6-digit code to your mobile number.</p>
+
+  <div id="formError" class="alert alert-error" style="display:none;"></div>
+  <div id="formSuccess" class="alert alert-success" style="display:none;"></div>
+
+  <!-- STEP 1: phone entry -->
+  <div id="phoneStep">
+    <div class="form-group">
+      <label>Mobile Number</label>
+      <input type="tel" id="phoneInput" maxlength="10" pattern="[0-9]{10}" placeholder="10-digit mobile number" />
+    </div>
+    <button class="btn btn-primary btn-block" id="sendOtpBtn">Send OTP</button>
+  </div>
+
+  <!-- STEP 2: otp entry (hidden until OTP sent) -->
+  <div id="otpStep" style="display:none;">
+    <p style="font-size:13.5px;">Enter the code sent to <strong id="otpPhoneLabel"></strong>. <a href="#" id="changeNumberLink">Change number</a></p>
+    <div class="form-group">
+      <label>OTP Code</label>
+      <input type="text" id="otpInput" maxlength="6" pattern="[0-9]{6}" placeholder="6-digit code" />
+    </div>
+    <button class="btn btn-primary btn-block" id="verifyOtpBtn">Verify & Login</button>
+    <div style="text-align:center; margin-top:12px;">
+      <a href="#" id="resendLink" style="font-size:13px;">Resend OTP</a>
+      <span id="resendTimer" style="font-size:13px; color:#6b7280;"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const nextUrl = "<%= nextUrl %>";
+  let currentPhone = '';
+  let resendCooldown = 0;
+  let resendInterval = null;
+
+  const errorBox = document.getElementById('formError');
+  const successBox = document.getElementById('formSuccess');
+
+  function showError(msg) {
+    errorBox.style.display = 'block';
+    errorBox.innerText = msg;
+    successBox.style.display = 'none';
+  }
+  function showSuccess(msg) {
+    successBox.style.display = 'block';
+    successBox.innerText = msg;
+    errorBox.style.display = 'none';
+  }
+  function clearMessages() {
+    errorBox.style.display = 'none';
+    successBox.style.display = 'none';
+  }
+
+  function startResendTimer() {
+    resendCooldown = 30;
+    const link = document.getElementById('resendLink');
+    const timer = document.getElementById('resendTimer');
+    link.style.display = 'none';
+    resendInterval = setInterval(() => {
+      resendCooldown--;
+      timer.innerText = `Resend available in ${resendCooldown}s`;
+      if (resendCooldown <= 0) {
+        clearInterval(resendInterval);
+        timer.innerText = '';
+        link.style.display = 'inline';
+      }
+    }, 1000);
+  }
+
+  async function sendOtp() {
+    const phone = document.getElementById('phoneInput').value.trim();
+    clearMessages();
+    if (!/^[0-9]{10}$/.test(phone)) {
+      return showError('Please enter a valid 10-digit mobile number.');
+    }
+    document.getElementById('sendOtpBtn').disabled = true;
+    try {
+      const res = await fetch('/login/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+
+      currentPhone = phone;
+      document.getElementById('otpPhoneLabel').innerText = phone;
+      document.getElementById('phoneStep').style.display = 'none';
+      document.getElementById('otpStep').style.display = 'block';
+      showSuccess('OTP sent! Check your phone (in dev mode, check the server console).');
+      startResendTimer();
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      document.getElementById('sendOtpBtn').disabled = false;
+    }
+  }
+
+  async function verifyOtp() {
+    const code = document.getElementById('otpInput').value.trim();
+    clearMessages();
+    if (!/^[0-9]{6}$/.test(code)) {
+      return showError('Please enter the 6-digit OTP.');
+    }
+    document.getElementById('verifyOtpBtn').disabled = true;
+    try {
+      const res = await fetch('/login/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: currentPhone, code }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Verification failed');
+
+      window.location.href = nextUrl;
+    } catch (err) {
+      showError(err.message);
+      document.getElementById('verifyOtpBtn').disabled = false;
+    }
+  }
+
+  document.getElementById('sendOtpBtn').addEventListener('click', sendOtp);
+  document.getElementById('verifyOtpBtn').addEventListener('click', verifyOtp);
+  document.getElementById('resendLink').addEventListener('click', (e) => { e.preventDefault(); sendOtp(); });
+  document.getElementById('changeNumberLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    clearInterval(resendInterval);
+    document.getElementById('otpStep').style.display = 'none';
+    document.getElementById('phoneStep').style.display = 'block';
+    clearMessages();
+  });
+
+  document.getElementById('phoneInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendOtp(); });
+  document.getElementById('otpInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') verifyOtp(); });
+</script>
+
+<%- include('partials/footer') %>

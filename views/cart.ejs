@@ -1,0 +1,90 @@
+<% var title = 'Your Cart - Kaynova' %>
+<%- include('partials/header') %>
+
+<h2 class="section-title">Your Cart</h2>
+<div id="cartContainer" class="card">
+  <p>Loading cart...</p>
+</div>
+
+<script>
+  function getCart() {
+    return JSON.parse(localStorage.getItem('shopease_cart') || '[]');
+  }
+  function saveCart(cart) {
+    localStorage.setItem('shopease_cart', JSON.stringify(cart));
+  }
+
+  async function renderCart() {
+    const cart = getCart();
+    const container = document.getElementById('cartContainer');
+
+    if (cart.length === 0) {
+      container.innerHTML = '<div class="empty-state">Your cart is empty. <br><br><a href="/" class="btn btn-primary">Continue Shopping</a></div>';
+      return;
+    }
+
+    const res = await fetch('/api/cart/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: cart }),
+    });
+    const data = await res.json();
+
+    if (data.items.length === 0) {
+      container.innerHTML = '<div class="empty-state">Items in your cart are no longer available.</div>';
+      localStorage.removeItem('shopease_cart');
+      return;
+    }
+
+    let html = '';
+    data.items.forEach(item => {
+      html += `
+        <div class="cart-row">
+          <img src="${item.image_url || 'https://via.placeholder.com/70'}" alt="${item.name}" />
+          <div class="cr-info">
+            <div><strong>${item.name}</strong></div>
+            <div class="stock-tag">₹${item.price.toFixed(2)} each</div>
+          </div>
+          <div class="qty-selector">
+            <button type="button" onclick="updateQty(${item.productId}, -1)">−</button>
+            <span>${item.quantity}</span>
+            <button type="button" onclick="updateQty(${item.productId}, 1)">+</button>
+          </div>
+          <div style="width:90px; text-align:right; font-weight:700;">₹${item.lineTotal.toFixed(2)}</div>
+          <button class="btn btn-danger btn-sm" onclick="removeItem(${item.productId})">Remove</button>
+        </div>
+      `;
+    });
+
+    html += `
+      <div style="margin-top:20px;">
+        <div class="cart-summary"><span>Subtotal</span><span>₹${data.subtotal.toFixed(2)}</span></div>
+        <div class="cart-summary"><span>Shipping</span><span>${data.shipping === 0 ? 'FREE' : '₹' + data.shipping.toFixed(2)}</span></div>
+        <div class="cart-summary total"><span>Total</span><span>₹${data.total.toFixed(2)}</span></div>
+        <a href="/checkout" class="btn btn-accent btn-block" style="margin-top:16px;">Proceed to Checkout</a>
+      </div>
+    `;
+
+    container.innerHTML = html;
+  }
+
+  function updateQty(productId, delta) {
+    const cart = getCart();
+    const item = cart.find(i => i.productId === productId);
+    if (!item) return;
+    item.quantity = Math.max(1, item.quantity + delta);
+    saveCart(cart);
+    renderCart();
+  }
+
+  function removeItem(productId) {
+    let cart = getCart();
+    cart = cart.filter(i => i.productId !== productId);
+    saveCart(cart);
+    renderCart();
+  }
+
+  renderCart();
+</script>
+
+<%- include('partials/footer') %>
