@@ -21,11 +21,31 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
+
+main.container { flex: 1; }
 
 a { color: inherit; text-decoration: none; }
 
 .container { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+
+/* Footer layout */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 14px 20px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.site-footer .left { flex: 1; text-align: left; }
+.site-footer .center { flex: 1; text-align: center; }
+.site-footer .right { flex: 1; text-align: right; }
+.site-footer a { color: #0066cc; }
+.site-footer a:hover { text-decoration: underline; }
 
 /* ---------- Header ---------- */
 header.site-header {
