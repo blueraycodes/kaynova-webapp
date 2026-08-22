@@ -95,6 +95,8 @@ header.site-header {
   margin: 28px 0;
   justify-content: start; /* align grid tracks to the left */
   justify-items: start;   /* align items inside their grid cells to the left */
+  margin-left: 0;         /* ensure the grid starts at the container's left padding */
+  align-content: start;   /* keep rows stacked from the top-left */
 }
 .product-card {
   background: var(--card-bg);
