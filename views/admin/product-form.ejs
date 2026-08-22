@@ -87,12 +87,15 @@
             <div style="width:120px;">
               <img src="<%= img.url %>" style="width:120px; height:120px; object-fit:cover; border-radius:6px; border:1px solid var(--border); display:block;" />
 
-              <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/rename" style="margin-top:8px; display:flex; gap:6px;">
+              <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/rename" style="margin-top:8px; display:flex; gap:6px; align-items:center;">
+                <div style="display:flex; gap:6px; align-items:center; flex:1;">
                 <% if (img.url && img.url.startsWith('/uploads/')) { %>
-                  <input type="text" name="name" value="<%= (function(){ var b = img.url.split('/').pop(); return b.replace(/\.[^/.]+$/, ''); })() %>" style="flex:1; font-size:12px; padding:6px;" />
+                  <input class="image-name-input" type="text" name="name" value="<%= (function(){ var b = img.url.split('/').pop(); return b.replace(/\.[^/.]+$/, ''); })() %>" style="flex:1; font-size:12px; padding:6px;" />
                 <% } else { %>
-                  <input type="text" name="name" value="<%= img.url %>" style="flex:1; font-size:12px; padding:6px;" />
+                  <input class="image-name-input" type="text" name="name" value="<%= img.url %>" style="flex:1; font-size:12px; padding:6px;" />
                 <% } %>
+                  <button type="button" class="clear-name-btn btn btn-sm" title="Clear" style="padding:6px 8px;">✕</button>
+                </div>
                 <button type="submit" class="btn btn-outline btn-sm">Save</button>
               </form>
 
@@ -105,7 +108,19 @@
         <p style="color:var(--muted); font-size:13px; margin-top:8px;">Uploading new files or adding new URLs will replace existing images.</p>
       </div>
     <% } %>
-    <% if (product) { %>
+
+    <script>
+      // Clear button handler for image name inputs
+      document.addEventListener('click', function (e) {
+        if (!e.target) return;
+        if (e.target.classList && e.target.classList.contains('clear-name-btn')) {
+          const wrapper = e.target.closest('div');
+          if (!wrapper) return;
+          const input = wrapper.querySelector('.image-name-input');
+          if (input) { input.value = ''; input.focus(); }
+        }
+      });
+    </script>    <% if (product) { %>
       <div class="form-group">
         <label><input type="checkbox" name="active" style="width:auto; display:inline-block;" <%= product.active ? 'checked' : '' %> /> Active (visible on storefront)</label>
       </div>
