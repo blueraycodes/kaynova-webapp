@@ -204,6 +204,69 @@ router.post('/categories/:id/delete', (req, res) => {
   res.redirect('/admin/products');
 });
 
+// ----------------- Image rename/delete endpoints -----------------
+router.post('/products/:productId/images/:imageId/rename', (req, res) => {
+  const productId = Number(req.params.productId);
+  const imageId = Number(req.params.imageId);
+  const newName = (req.body.name || '').trim();
+  if (!productId || !imageId || !newName) return res.redirect(`/admin/products/${productId}/edit`);
+
+  const img = db.prepare('SELECT * FROM product_images WHERE id = ? AND product_id = ?').get(imageId, productId);
+  if (!img) return res.redirect(`/admin/products/${productId}/edit`);
+
+  try {
+    if (img.url && img.url.startsWith('/uploads/')) {
+      const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
+      const oldFilename = path.basename(img.url);
+      const oldPath = path.join(uploadsDir, oldFilename);
+      const ext = path.extname(oldFilename) || '';
+      const base = newName.replace(/[^a-zA-Z0-9-_]/g, '-').replace(/-+/g, '-').trim();
+      const newFilename = Date.now() + '-' + (base || 'img') + ext;
+      const newPath = path.join(uploadsDir, newFilename);
+      fs.renameSync(oldPath, newPath);
+      db.prepare('UPDATE product_images SET url = ? WHERE id = ?').run('/uploads/' + newFilename, imageId);
+    } else {
+      // if external URL, allow replacing URL directly
+      db.prepare('UPDATE product_images SET url = ? WHERE id = ?').run(newName, imageId);
+    }
+
+    // refresh primary product image
+    const first = db.prepare('SELECT url FROM product_images WHERE product_id = ? ORDER BY id ASC LIMIT 1').get(productId);
+    db.prepare('UPDATE products SET image_url = ? WHERE id = ?').run(first ? first.url : null, productId);
+  } catch (e) {
+    console.error('rename image error:', e);
+  }
+
+  res.redirect(`/admin/products/${productId}/edit`);
+});
+
+router.post('/products/:productId/images/:imageId/delete', (req, res) => {
+  const productId = Number(req.params.productId);
+  const imageId = Number(req.params.imageId);
+  if (!productId || !imageId) return res.redirect(`/admin/products/${productId}/edit`);
+
+  const img = db.prepare('SELECT * FROM product_images WHERE id = ? AND product_id = ?').get(imageId, productId);
+  if (!img) return res.redirect(`/admin/products/${productId}/edit`);
+
+  try {
+    if (img.url && img.url.startsWith('/uploads/')) {
+      const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
+      const filepath = path.join(uploadsDir, path.basename(img.url));
+      try { fs.unlinkSync(filepath); } catch (e) { /* ignore */ }
+    }
+    db.prepare('DELETE FROM product_images WHERE id = ?').run(imageId);
+
+    // ensure products.image_url points to next image or null
+    const first = db.prepare('SELECT url FROM product_images WHERE product_id = ? ORDER BY id ASC LIMIT 1').get(productId);
+    db.prepare('UPDATE products SET image_url = ? WHERE id = ?').run(first ? first.url : null, productId);
+  } catch (e) {
+    console.error('delete image error:', e);
+  }
+
+  res.redirect(`/admin/products/${productId}/edit`);
+});
+
+
 // ================= ORDERS & CONSIGNMENT TRACKING =================
 router.get('/orders', (req, res) => {
   const { status, payment } = req.query;

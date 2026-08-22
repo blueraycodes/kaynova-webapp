@@ -82,9 +82,24 @@
     <% if (typeof images !== 'undefined' && images && images.length) { %>
       <div class="form-group">
         <label>Existing Images</label>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
           <% images.forEach(function(img){ %>
-            <img src="<%= img.url %>" style="width:84px; height:84px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />
+            <div style="width:120px;">
+              <img src="<%= img.url %>" style="width:120px; height:120px; object-fit:cover; border-radius:6px; border:1px solid var(--border); display:block;" />
+
+              <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/rename" style="margin-top:8px; display:flex; gap:6px;">
+                <% if (img.url && img.url.startsWith('/uploads/')) { %>
+                  <input type="text" name="name" value="<%= (function(){ var b = img.url.split('/').pop(); return b.replace(/\.[^/.]+$/, ''); })() %>" style="flex:1; font-size:12px; padding:6px;" />
+                <% } else { %>
+                  <input type="text" name="name" value="<%= img.url %>" style="flex:1; font-size:12px; padding:6px;" />
+                <% } %>
+                <button type="submit" class="btn btn-outline btn-sm">Save</button>
+              </form>
+
+              <form method="POST" action="/admin/products/<%= product.id %>/images/<%= img.id %>/delete" onsubmit="return confirm('Delete this image?');" style="margin-top:6px;">
+                <button type="submit" class="btn btn-danger btn-sm" style="width:100%;">Delete</button>
+              </form>
+            </div>
           <% }); %>
         </div>
         <p style="color:var(--muted); font-size:13px; margin-top:8px;">Uploading new files or adding new URLs will replace existing images.</p>
