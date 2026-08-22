@@ -93,6 +93,8 @@ header.site-header {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 20px;
   margin: 28px 0;
+  justify-content: start; /* align grid tracks to the left */
+  justify-items: start;   /* align items inside their grid cells to the left */
 }
 .product-card {
   background: var(--card-bg);
