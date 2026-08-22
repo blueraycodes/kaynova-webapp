@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const db = require('../db/database');
 const { requireAdmin } = require('../middleware/auth');
 
@@ -82,8 +83,24 @@ router.post('/products/new', upload.array('image_files', 6), (req, res) => {
   const insertImg = db.prepare('INSERT INTO product_images (product_id, url) VALUES (?, ?)');
 
   // files uploaded
-  if (Array.isArray(req.files) && req.files.length) {
-    req.files.forEach(f => insertImg.run(productId, '/uploads/' + f.filename));
+  const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
+  const uploaded = Array.isArray(req.files) ? req.files : [];
+  const desiredNames = req.body.image_file_names || [];
+  if (uploaded.length) {
+    uploaded.forEach((f, idx) => {
+      let newUrl = '/uploads/' + f.filename;
+      const desired = Array.isArray(desiredNames) ? desiredNames[idx] : desiredNames;
+      if (desired && desired.trim()) {
+        const ext = path.extname(f.originalname) || path.extname(f.filename) || '';
+        const base = desired.replace(/[^a-zA-Z0-9-_]/g, '-') .replace(/-+/g, '-').trim();
+        const newFilename = Date.now() + '-' + (base || 'img') + ext;
+        const oldPath = path.join(uploadsDir, f.filename);
+        const newPath = path.join(uploadsDir, newFilename);
+        try { fs.renameSync(oldPath, newPath); newUrl = '/uploads/' + newFilename; }
+        catch (e) { console.error('rename failed', e); }
+      }
+      insertImg.run(productId, newUrl);
+    });
   }
 
   // image_url field may contain comma-separated URLs
@@ -121,7 +138,25 @@ router.post('/products/:id/edit', upload.array('image_files', 6), (req, res) => 
   if (hasFiles || hasUrls) {
     db.prepare('DELETE FROM product_images WHERE product_id = ?').run(req.params.id);
     const insertImg = db.prepare('INSERT INTO product_images (product_id, url) VALUES (?, ?)');
-    if (hasFiles) req.files.forEach(f => insertImg.run(req.params.id, '/uploads/' + f.filename));
+    const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
+    const uploaded = Array.isArray(req.files) ? req.files : [];
+    const desiredNames = req.body.image_file_names || [];
+    if (hasFiles) {
+      uploaded.forEach((f, idx) => {
+        let newUrl = '/uploads/' + f.filename;
+        const desired = Array.isArray(desiredNames) ? desiredNames[idx] : desiredNames;
+        if (desired && desired.trim()) {
+          const ext = path.extname(f.originalname) || path.extname(f.filename) || '';
+          const base = desired.replace(/[^a-zA-Z0-9-_]/g, '-') .replace(/-+/g, '-').trim();
+          const newFilename = Date.now() + '-' + (base || 'img') + ext;
+          const oldPath = path.join(uploadsDir, f.filename);
+          const newPath = path.join(uploadsDir, newFilename);
+          try { fs.renameSync(oldPath, newPath); newUrl = '/uploads/' + newFilename; }
+          catch (e) { console.error('rename failed', e); }
+        }
+        insertImg.run(req.params.id, newUrl);
+      });
+    }
     if (hasUrls) (image_url||'').split(',').map(s => s.trim()).filter(Boolean).forEach(u => insertImg.run(req.params.id, u));
     const first = db.prepare('SELECT url FROM product_images WHERE product_id = ? ORDER BY id ASC LIMIT 1').get(req.params.id);
     if (first) db.prepare('UPDATE products SET image_url = ? WHERE id = ?').run(first.url, req.params.id);
