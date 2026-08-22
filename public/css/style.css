@@ -89,14 +89,16 @@ header.site-header {
 
 /* ---------- Product Grid ---------- */
 .product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 20px;
   margin: 28px 0;
-  justify-content: start; /* align grid tracks to the left */
-  justify-items: start;   /* align items inside their grid cells to the left */
-  margin-left: 0;         /* ensure the grid starts at the container's left padding */
-  align-content: start;   /* keep rows stacked from the top-left */
+  justify-content: flex-start; /* ensure items start from the left */
+  align-items: flex-start;
+}
+
+.product-card {
+  flex: 0 0 220px; /* fixed card width similar to previous minmax(220px,1fr) */
 }
 .product-card {
   background: var(--card-bg);
