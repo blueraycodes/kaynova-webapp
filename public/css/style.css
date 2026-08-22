@@ -134,7 +134,7 @@ header.site-header {
 
 /* ---------- Cards / Sections ---------- */
 .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
-.section-title { font-size: 20px; font-weight: 800; margin: 30px 0 14px; }
+.section-title { font-size: 20px; font-weight: 800; margin: 30px 0 14px; text-align: left; }
 
 /* ---------- Forms ---------- */
 label { font-size: 13px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 4px; }
@@ -208,7 +208,8 @@ table img.thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 6
 .alert-error { background: #fbe4e4; color: var(--danger); }
 .alert-success { background: #e3f7ec; color: var(--success); }
 
-footer.site-footer { text-align: center; padding: 30px 20px; color: var(--muted); font-size: 13px; margin-top: 40px; }
+/* footer.site-footer reset (handled earlier) */
+footer.site-footer { padding: 30px 20px; color: var(--muted); font-size: 13px; margin-top: 40px; }
 
 .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
 .hero { background: linear-gradient(120deg, var(--primary), var(--primary-dark)); color: #fff; padding: 46px 20px; border-radius: var(--radius); margin: 24px 0; text-align: center; }
