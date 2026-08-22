@@ -148,6 +148,11 @@ header.site-header {
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-success { background: var(--success); color: #fff; }
 .btn-sm { padding: 6px 10px; font-size: 12px; }
+
+.clear-name-btn { background: #fff; border: 1px solid var(--border); padding:6px 8px; border-radius:6px; cursor:pointer; }
+.clear-name-btn:hover { background: #f8fafc; }
+.clear-name-btn:focus { outline: 2px solid rgba(42,68,148,0.18); }
+
 .btn-block { width: 100%; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
