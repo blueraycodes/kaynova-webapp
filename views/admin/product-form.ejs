@@ -61,17 +61,33 @@
             thumb.src = URL.createObjectURL(file);
             thumb.style.width = '64px'; thumb.style.height = '64px'; thumb.style.objectFit = 'cover'; thumb.style.borderRadius='6px'; thumb.style.border='1px solid #e5e7eb';
 
+            const inputWrap = document.createElement('div');
+            inputWrap.style.display = 'flex'; inputWrap.style.gap = '6px'; inputWrap.style.alignItems = 'center'; inputWrap.style.flex = '1';
+
             const nameInput = document.createElement('input');
             nameInput.type = 'text';
             nameInput.name = 'image_file_names[]';
+            nameInput.className = 'image-name-input';
             nameInput.value = file.name.replace(/\.[^/.]+$/, '');
             nameInput.style.flex = '1';
             nameInput.title = 'Enter desired filename (without extension)';
+            nameInput.style.fontSize = '12px'; nameInput.style.padding = '6px';
+
+            const clearBtn = document.createElement('button');
+            clearBtn.type = 'button';
+            clearBtn.className = 'clear-name-btn btn btn-sm';
+            clearBtn.title = 'Clear filename';
+            clearBtn.setAttribute('aria-label','Clear filename');
+            clearBtn.style.padding = '6px 8px';
+            clearBtn.textContent = '✕';
 
             const orig = document.createElement('div'); orig.textContent = file.name; orig.style.fontSize='12px'; orig.style.color='#6b7280'; orig.style.minWidth='180px';
 
+            inputWrap.appendChild(nameInput);
+            inputWrap.appendChild(clearBtn);
+
             row.appendChild(thumb);
-            row.appendChild(nameInput);
+            row.appendChild(inputWrap);
             row.appendChild(orig);
             list.appendChild(row);
           });
