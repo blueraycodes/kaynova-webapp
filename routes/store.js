@@ -30,7 +30,8 @@ router.get('/', (req, res) => {
 router.get('/product/:id', (req, res) => {
   const product = db.prepare('SELECT * FROM products WHERE id = ? AND active = 1').get(req.params.id);
   if (!product) return res.status(404).render('404');
-  res.render('product', { product });
+  const images = db.prepare('SELECT url FROM product_images WHERE product_id = ? ORDER BY id ASC').all(req.params.id).map(r => r.url);
+  res.render('product', { product, images });
 });
 
 // ---------- CART PAGE (cart itself is managed client-side in localStorage) ----------

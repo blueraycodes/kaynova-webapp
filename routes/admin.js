@@ -70,13 +70,31 @@ router.get('/products/new', (req, res) => {
   res.render('admin/product-form', { product: null, categories, adminUsername: req.session.adminUsername });
 });
 
-router.post('/products/new', upload.single('image_file'), (req, res) => {
+router.post('/products/new', upload.array('image_files', 6), (req, res) => {
   const { name, description, price, stock, category_id, image_url } = req.body;
-  const finalImage = req.file ? '/uploads/' + req.file.filename : (image_url || '');
-  db.prepare(`
+  // insert product first (image_url will be set to first image below)
+  const info = db.prepare(`
     INSERT INTO products (name, description, price, image_url, stock, category_id)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(name, description, parseFloat(price), finalImage, parseInt(stock, 10), category_id || null);
+  `).run(name, description, parseFloat(price), '', parseInt(stock, 10), category_id || null);
+  const productId = info.lastInsertRowid;
+
+  const insertImg = db.prepare('INSERT INTO product_images (product_id, url) VALUES (?, ?)');
+
+  // files uploaded
+  if (Array.isArray(req.files) && req.files.length) {
+    req.files.forEach(f => insertImg.run(productId, '/uploads/' + f.filename));
+  }
+
+  // image_url field may contain comma-separated URLs
+  if (image_url) {
+    (image_url||'').split(',').map(s => s.trim()).filter(Boolean).forEach(u => insertImg.run(productId, u));
+  }
+
+  // set first image as product.image_url for backward compatibility
+  const first = db.prepare('SELECT url FROM product_images WHERE product_id = ? ORDER BY id ASC LIMIT 1').get(productId);
+  if (first) db.prepare('UPDATE products SET image_url = ? WHERE id = ?').run(first.url, productId);
+
   res.redirect('/admin/products');
 });
 
@@ -84,17 +102,31 @@ router.get('/products/:id/edit', (req, res) => {
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
   if (!product) return res.status(404).send('Product not found');
   const categories = db.prepare('SELECT * FROM categories ORDER BY name').all();
-  res.render('admin/product-form', { product, categories, adminUsername: req.session.adminUsername });
+  const images = db.prepare('SELECT * FROM product_images WHERE product_id = ? ORDER BY id ASC').all(req.params.id);
+  res.render('admin/product-form', { product, categories, images, adminUsername: req.session.adminUsername });
 });
 
-router.post('/products/:id/edit', upload.single('image_file'), (req, res) => {
+router.post('/products/:id/edit', upload.array('image_files', 6), (req, res) => {
   const { name, description, price, stock, category_id, image_url, active } = req.body;
   const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
-  const finalImage = req.file ? '/uploads/' + req.file.filename : (image_url || existing.image_url);
+  // update basic fields, image_url will be recalculated below
   db.prepare(`
-    UPDATE products SET name=?, description=?, price=?, image_url=?, stock=?, category_id=?, active=?
+    UPDATE products SET name=?, description=?, price=?, stock=?, category_id=?, active=?
     WHERE id = ?
-  `).run(name, description, parseFloat(price), finalImage, parseInt(stock, 10), category_id || null, active ? 1 : 0, req.params.id);
+  `).run(name, description, parseFloat(price), parseInt(stock, 10), category_id || null, active ? 1 : 0, req.params.id);
+
+  // If new files or image_url provided, replace existing images
+  const hasFiles = Array.isArray(req.files) && req.files.length;
+  const hasUrls = Boolean(image_url && image_url.trim());
+  if (hasFiles || hasUrls) {
+    db.prepare('DELETE FROM product_images WHERE product_id = ?').run(req.params.id);
+    const insertImg = db.prepare('INSERT INTO product_images (product_id, url) VALUES (?, ?)');
+    if (hasFiles) req.files.forEach(f => insertImg.run(req.params.id, '/uploads/' + f.filename));
+    if (hasUrls) (image_url||'').split(',').map(s => s.trim()).filter(Boolean).forEach(u => insertImg.run(req.params.id, u));
+    const first = db.prepare('SELECT url FROM product_images WHERE product_id = ? ORDER BY id ASC LIMIT 1').get(req.params.id);
+    if (first) db.prepare('UPDATE products SET image_url = ? WHERE id = ?').run(first.url, req.params.id);
+  }
+
   res.redirect('/admin/products');
 });
 

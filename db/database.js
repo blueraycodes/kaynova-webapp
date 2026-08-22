@@ -34,6 +34,14 @@ CREATE TABLE IF NOT EXISTS products (
   FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
+CREATE TABLE IF NOT EXISTS product_images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL,
+  url TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS customers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   phone TEXT UNIQUE NOT NULL,

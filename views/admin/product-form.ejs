@@ -36,13 +36,25 @@
       </select>
     </div>
     <div class="form-group">
-      <label>Image URL (or upload a file below)</label>
-      <input type="text" name="image_url" value="<%= product ? product.image_url : '' %>" placeholder="https://..." />
+      <label>Image URLs (comma-separated) or upload files below</label>
+      <input type="text" name="image_url" value="<%= product ? product.image_url : '' %>" placeholder="https://... , https://..." />
     </div>
     <div class="form-group">
-      <label>Or Upload Image File</label>
-      <input type="file" name="image_file" accept="image/*" />
+      <label>Or Upload Image Files (you can select multiple)</label>
+      <input type="file" name="image_files" accept="image/*" multiple />
     </div>
+
+    <% if (typeof images !== 'undefined' && images && images.length) { %>
+      <div class="form-group">
+        <label>Existing Images</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <% images.forEach(function(img){ %>
+            <img src="<%= img.url %>" style="width:84px; height:84px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />
+          <% }); %>
+        </div>
+        <p style="color:var(--muted); font-size:13px; margin-top:8px;">Uploading new files or adding new URLs will replace existing images.</p>
+      </div>
+    <% } %>
     <% if (product) { %>
       <div class="form-group">
         <label><input type="checkbox" name="active" style="width:auto; display:inline-block;" <%= product.active ? 'checked' : '' %> /> Active (visible on storefront)</label>

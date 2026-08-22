@@ -2,7 +2,29 @@
 <%- include('partials/header') %>
 
 <div class="product-detail">
-  <img src="<%= product.image_url || 'https://via.placeholder.com/600x450?text=No+Image' %>" alt="<%= product.name %>" />
+  <div>
+    <div class="carousel" id="productCarousel">
+      <button class="nav-btn left" id="prevBtn">‹</button>
+      <div class="carousel-track" id="carouselTrack">
+        <% if (Array.isArray(images) && images.length) { %>
+          <% images.forEach(function(img){ %>
+            <img src="<%= img %>" alt="<%= product.name %>" />
+          <% }); %>
+        <% } else { %>
+          <img src="<%= product.image_url || 'https://via.placeholder.com/600x450?text=No+Image' %>" alt="<%= product.name %>" />
+        <% } %>
+      </div>
+      <button class="nav-btn right" id="nextBtn">›</button>
+    </div>
+    <% if (Array.isArray(images) && images.length) { %>
+      <div class="carousel-thumbs" id="carouselThumbs">
+        <% images.forEach(function(img, idx){ %>
+          <img src="<%= img %>" data-idx="<%= idx %>" class="<%= idx===0 ? 'active' : '' %>" />
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+
   <div>
     <h1><%= product.name %></h1>
     <div class="price">₹<%= product.price.toFixed(2) %></div>
@@ -24,6 +46,53 @@
     </button>
   </div>
 </div>
+
+<script>
+  // Carousel logic
+  (function(){
+    const track = document.getElementById('carouselTrack');
+    if (!track) return;
+    const slides = Array.from(track.querySelectorAll('img'));
+    let index = 0;
+    const prev = document.getElementById('prevBtn');
+    const next = document.getElementById('nextBtn');
+    const thumbs = document.getElementById('carouselThumbs');
+
+    function update() {
+      track.style.transform = 'translateX(' + (-index * track.clientWidth) + 'px)';
+      if (thumbs) {
+        Array.from(thumbs.querySelectorAll('img')).forEach((t,i)=> t.classList.toggle('active', i===index));
+      }
+    }
+
+    window.addEventListener('resize', update);
+    if (prev) prev.addEventListener('click', ()=>{ index = Math.max(0, index-1); update(); });
+    if (next) next.addEventListener('click', ()=>{ index = Math.min(slides.length-1, index+1); update(); });
+
+    if (thumbs) thumbs.addEventListener('click', (e)=>{
+      const t = e.target.closest('img'); if (!t) return; index = Number(t.dataset.idx) || 0; update();
+    });
+
+    // touch swipe support
+    let startX = 0; let dx = 0;
+    track.addEventListener('touchstart', (e)=> { startX = e.touches[0].clientX; }, {passive:true});
+    track.addEventListener('touchmove', (e)=> { dx = e.touches[0].clientX - startX; }, {passive:true});
+    track.addEventListener('touchend', ()=>{
+      if (dx > 40) { index = Math.max(0, index-1); }
+      else if (dx < -40) { index = Math.min(slides.length-1, index+1); }
+      dx = 0; update();
+    });
+
+    // initial sizing: ensure each slide is track width
+    function sizeSlides(){
+      const w = track.clientWidth;
+      slides.forEach(s=> s.style.width = w + 'px');
+      update();
+    }
+    sizeSlides();
+    setTimeout(sizeSlides,100);
+  })();
+</script>
 
 <script>
   let qty = 1;
